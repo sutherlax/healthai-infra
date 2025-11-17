@@ -41,7 +41,6 @@
 #       uses: hashicorp/setup-terraform@v1
 #       with:
 #         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-
 name: Terraform Deploy
 
 on:
@@ -57,6 +56,8 @@ jobs:
 
     env:
       AWS_REGION: "us-east-1"
+      # This maps to Terraform variable "db_master_password"
+      TF_VAR_db_master_password: ${{ secrets.DB_MASTER_PASSWORD }}
 
     steps:
       - name: Checkout repo
@@ -74,6 +75,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Debug AWS identity
+        run: aws sts get-caller-identity
+
       - name: Terraform Init
         run: terraform init
 
@@ -83,7 +87,8 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -input=false
 
-      # ⚠️ Be careful: this will actually create/modify resources on push to main
+      # ⚠️ This actually creates/modifies resources on main
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve -input=false
+
